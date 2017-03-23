@@ -5,7 +5,7 @@
 
 int main() {
 	if (!isEmpty(NULL)) {
-		printf("Not empty.");		
+		printf("Not emFUYJFKpty.");		
 	}
 	return 0;
 }
