@@ -12,6 +12,9 @@ void clickPassenger() {
 	extern Channel channel;
 	if (!isFull(&channel)) {
 		push(&channel);
+		printf("普通乘客进入候机通道\n");
+	} else {
+		printf("普通候机通道已满\n");
 	}
 	ReleaseMutex(channelLock);
 }
@@ -22,9 +25,11 @@ void clickVip() {
 	HANDLE * lock;
 	Channel * cl;
 	char str[100];
+	bool isVip;
 	for (int i = 0; i < 3; i++) {
 		inputbox_getline("提示输入", "请输入VIP身份号：", str, sizeof(str)/sizeof(*str));
-		if (hasVip(str)) {
+		isVip = hasVip(str);
+		if (isVip) {
 			extern HANDLE vipChannelLock;
 			lock = &vipChannelLock;
 			extern Channel vipChannel;
@@ -41,6 +46,17 @@ void clickVip() {
 	extern Channel vipChannel;
 	if (!isFull(cl)) {
 		push(cl);
+		if (isVip) {
+			printf("VIP乘客进入候机通道\n");
+		} else {
+			printf("普通乘客进入候机通道\n");
+		}
+	} else {
+		if (isVip) {
+			printf("VIP候机通道已满\n");
+		} else {
+			printf("普通候机通道已满\n");
+		}
 	}
 	ReleaseMutex(*lock);
 }
@@ -57,10 +73,6 @@ bool hasVip(const char * str) {
 		}
 	}
 	return false;
-}
-
-void clickClose() {
-	printf("点击下班按钮\n");
 }
 
 bool hasOtherNotPause(const int number, const int s, const int e);
@@ -91,154 +103,51 @@ void clickReset(const int number) {
 
 void clock(const int number);
 
-DWORD WINAPI checkpoint0(PVOID pM) {
+DWORD WINAPI checkpoint(PVOID pM) {
+	extern HANDLE checkpointNumLock;
+	WaitForSingleObject(checkpointNumLock, INFINITE);
+	extern int checkpointNum;
+	int number = checkpointNum;
+	checkpointNum++;
+	ReleaseMutex(checkpointNumLock);
+	printf("number: %d\n", number);
 	while (true) {
-		clock(0);
+		clock(number);
 		extern bool closed;
 		if (closed) {
 			extern Channel vipChannel;
 			extern Channel channel;
 			extern Checkpoint checkpoints[];
-			if (isEmpty(&vipChannel) && isEmpty(&channel) && isEmpty(&checkpoints[0])) {
+			if (isEmpty(&vipChannel) && isEmpty(&channel) && isEmpty(&checkpoints[number])) {
 				extern bool isLives[];
-				isLives[0] = false;
+				isLives[number] = false;
 				break;
 			}
 		}
-	}
-	return 0;
-}
-
-DWORD WINAPI checkpoint1(PVOID pM) {
-	while (true) {
-		clock(1);
-		extern bool closed;
-		if (closed) {
-			extern Channel vipChannel;
-			extern Channel channel;
-			extern Checkpoint checkpoints[];
-			if (isEmpty(&vipChannel) && isEmpty(&channel) && isEmpty(&checkpoints[1])) {
-				extern bool isLives[];
-				isLives[1] = false;
-				break;
-			}
-		}
-	}
-	return 0;
-}
-
-DWORD WINAPI checkpoint2(PVOID pM) {
-	while (true) {
-		clock(2);
-		extern bool closed;
-		if (closed) {
-			extern Channel vipChannel;
-			extern Channel channel;
-			extern Checkpoint checkpoints[];
-			if (isEmpty(&vipChannel) && isEmpty(&channel) && isEmpty(&checkpoints[2])) {
-				extern bool isLives[];
-				isLives[2] = false;
-				break;
-			}
-		}
-	}
-	return 0;
-}
-
-DWORD WINAPI checkpoint3(PVOID pM) {
-	while (true) {
-		clock(3);
-		extern bool closed;
-		if (closed) {
-			extern Channel vipChannel;
-			extern Channel channel;
-			extern Checkpoint checkpoints[];
-			if (isEmpty(&vipChannel) && isEmpty(&channel) && isEmpty(&checkpoints[3])) {
-				extern bool isLives[];
-				isLives[3] = false;
-				break;
-			}
-		}
-	}
-	return 0;
-}
-
-DWORD WINAPI checkpoint4(PVOID pM) {
-	while (true) {
-		clock(4);
-		extern bool closed;
-		if (closed) {
-			extern Channel vipChannel;
-			extern Channel channel;
-			extern Checkpoint checkpoints[];
-			if (isEmpty(&vipChannel) && isEmpty(&channel) && isEmpty(&checkpoints[4])) {
-				extern bool isLives[];
-				isLives[4] = false;
-				break;
-			}
-		}
-	}
-	return 0;
-}
-
-DWORD WINAPI checkpoint5(PVOID pM) {
-	while (true) {
-		clock(5);
-		extern bool closed;
-		if (closed) {
-			extern Channel vipChannel;
-			extern Channel channel;
-			extern Checkpoint checkpoints[];
-			if (isEmpty(&vipChannel) && isEmpty(&channel) && isEmpty(&checkpoints[5])) {
-				extern bool isLives[];
-				isLives[5] = false;
-				break;
-			}
-		}
-	}
-	return 0;
-}
-
-DWORD WINAPI checkpoint6(PVOID pM) {
-	while (true) {
-		clock(6);
-		extern bool closed;
-		if (closed) {
-			extern Channel vipChannel;
-			extern Channel channel;
-			extern Checkpoint checkpoints[];
-			if (isEmpty(&vipChannel) && isEmpty(&channel) && isEmpty(&checkpoints[6])) {
-				extern bool isLives[];
-				isLives[6] = false;
-				break;
-			}
-		}
+		api_sleep(1000);
 	}
 	return 0;
 }
 
 void clock(const int number) {
-	while (true) {
-		extern Checkpoint checkpoints[];
-		if (!isEmpty(&checkpoints[number]) && checkpoints[number].passtime <= fclock()) {
-			shift(&checkpoints[number]);
-			checkpoints[number].passtime = fclock() + PASSTIME;
+	extern Checkpoint checkpoints[];
+	if (!isEmpty(&checkpoints[number]) && checkpoints[number].passtime <= fclock()) {
+		shift(&checkpoints[number]);
+		checkpoints[number].passtime = fclock() + PASSTIME;
+	}
+	extern bool pauses[];
+	if (!pauses[number] && !isFull(&checkpoints[number])) {
+		extern HANDLE vipChannelLock;
+		extern HANDLE channelLock;
+		const HANDLE * lock = number < VIP_CHECKPOINT_NUMBER ? &vipChannelLock : &channelLock;
+		WaitForSingleObject(*lock, INFINITE);
+		extern Channel vipChannel;
+		extern Channel channel;
+		Channel * cl = number < VIP_CHECKPOINT_NUMBER ? &vipChannel : &channel;
+		if (!isEmpty(cl)) {
+			shift(cl);
+			push(&checkpoints[number]);
 		}
-		extern bool pauses[];
-		if (!pauses[number] && !isFull(&checkpoints[number])) {
-			extern HANDLE vipChannelLock;
-			extern HANDLE channelLock;
-			const HANDLE * lock = number < VIP_CHECKPOINT_NUMBER ? &vipChannelLock : &channelLock;
-			WaitForSingleObject(*lock, INFINITE);
-			extern Channel vipChannel;
-			extern Channel channel;
-			Channel * cl = number < VIP_CHECKPOINT_NUMBER ? &vipChannel : &channel;
-			if (!isEmpty(cl)) {
-				shift(cl);
-				push(&checkpoints[number]);
-			}
-			ReleaseMutex(*lock);
-		}
-		api_sleep(1000);
+		ReleaseMutex(*lock);
 	}
 }

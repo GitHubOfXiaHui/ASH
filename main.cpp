@@ -21,6 +21,7 @@ int main() {
 			} else if (onCloseButton(msg.x, msg.y)) {
 				extern bool closed;
 				closed = true;
+				printf("µÈ´ýÏÂ°à...\n");
 				break;
 			}
 			const int pause = onPauseButtons(msg.x, msg.y);
