@@ -148,8 +148,11 @@ void clock(const int number) {
 		extern Channel vipChannel;
 		extern Channel channel;
 		Channel * cl = number < VIP_CHECKPOINT_NUMBER ? &vipChannel : &channel;
-		if (!isEmpty(cl) && !isFull(&checkpoints[number])) {
+		if (!isEmpty(cl)) {
 			shift(cl);
+			if (isEmpty(&checkpoints[number])) {
+				checkpoints[number].passtime = fclock() + PASSTIME;
+			}
 			push(&checkpoints[number]);
 			if (number < VIP_CHECKPOINT_NUMBER) {
 				printf("VIP乘客进入安检口\n");
