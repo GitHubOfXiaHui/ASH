@@ -46,6 +46,9 @@ int main() {
 			}
 			flag = false;
 		}
+		delay_fps(60);
+		cleardevice();
+		printScreen();
 	}
 	closegraph();
 	return 0;

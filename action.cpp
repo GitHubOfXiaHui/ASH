@@ -110,7 +110,6 @@ DWORD WINAPI checkpoint(PVOID pM) {
 	int number = checkpointNum;
 	checkpointNum++;
 	ReleaseMutex(checkpointNumLock);
-	printf("number: %d\n", number);
 	while (true) {
 		clock(number);
 		extern bool closed;
@@ -133,6 +132,11 @@ void clock(const int number) {
 	extern Checkpoint checkpoints[];
 	if (!isEmpty(&checkpoints[number]) && checkpoints[number].passtime <= fclock()) {
 		shift(&checkpoints[number]);
+		if (number < VIP_CHECKPOINT_NUMBER) {
+			printf("VIP乘客通过安检口\n");
+		} else {
+			printf("普通乘客通过安检口\n");
+		}
 		checkpoints[number].passtime = fclock() + PASSTIME;
 	}
 	extern bool pauses[];
@@ -144,9 +148,14 @@ void clock(const int number) {
 		extern Channel vipChannel;
 		extern Channel channel;
 		Channel * cl = number < VIP_CHECKPOINT_NUMBER ? &vipChannel : &channel;
-		if (!isEmpty(cl)) {
+		if (!isEmpty(cl) && !isFull(&checkpoints[number])) {
 			shift(cl);
 			push(&checkpoints[number]);
+			if (number < VIP_CHECKPOINT_NUMBER) {
+				printf("VIP乘客进入安检口\n");
+			} else {
+				printf("普通乘客进入安检口\n");
+			}
 		}
 		ReleaseMutex(*lock);
 	}
