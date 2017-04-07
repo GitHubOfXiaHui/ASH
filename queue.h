@@ -23,6 +23,7 @@ bool isFull(const Queue * queue);
 
 // 入队 
 bool push(Queue * queue);
+void pushAll(Queue * queue, const int num);
 
 // 出队 
 bool shift(Queue * queue);

@@ -24,6 +24,10 @@ bool push(Queue * queue) {
 	return false;
 }
 
+void pushAll(Queue * queue, const int num) {
+	queue->people = queue->people + num < queue->capacity ? queue->people + num : queue->capacity;
+}
+
 bool shift(Queue * queue) {
 	if (!isEmpty(queue)) {
 		queue->people -= 1;

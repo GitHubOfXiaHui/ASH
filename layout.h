@@ -3,15 +3,10 @@
 
 // ÆÁÄ»´óÐ¡ 
 #define SCREEN_WIDTH 720
-#define SCREEN_HEIGHT 560
+#define SCREEN_HEIGHT 360
 
 void printScreen();
 
-bool onVipButton(const int x, const int y);
-bool onPassengerButton(const int x, const int y);
 bool onCloseButton(const int x, const int y);
-
-int onPauseButtons(const int x, const int y);
-int onResetButtons(const int x, const int y);
 
 #endif
