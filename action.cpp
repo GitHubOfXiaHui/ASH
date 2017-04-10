@@ -19,13 +19,15 @@ DWORD WINAPI passenger(PVOID pM) {
 	}
 }
 
+int getPassenger();
+
 void enterChannel() {
 	extern HANDLE channelLock;
 	WaitForSingleObject(channelLock, INFINITE);
 	extern Channel channel;
 	extern int channelCurrentNum;
 	if (channelCurrentNum < CHANNEL_MAX_NUM) {
-		int psg = random(100);
+		int psg = getPassenger();
 		if (channel.capacity - channel.people < psg) {
 			channelCurrentNum++;
 			channel.capacity = channelCurrentNum * CHANNEL_CAPACITY;
@@ -39,6 +41,10 @@ void enterChannel() {
 		printf("候机通道已满\n");
 	}
 	ReleaseMutex(channelLock);
+}
+
+int getPassenger() {
+	return random(CHANNEL_CAPACITY);
 }
 
 void pass(const int number);
